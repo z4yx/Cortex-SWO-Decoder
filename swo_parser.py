@@ -125,7 +125,7 @@ class StreamManager:
                 return
                 
             if stream_id in self.streams:
-                s = bstring[1:payload_size+1].decode('ascii')
+                s = bstring[1:payload_size+1].decode('ascii', 'ignore')
                 self.streams[stream_id].add_chars(s)
             
             bstring = bstring[payload_size+1:]
