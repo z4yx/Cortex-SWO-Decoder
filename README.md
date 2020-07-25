@@ -41,8 +41,11 @@ After starting up OpenOCD, open a terminal in the directory where you placed
 swo_parser.py and type
 
 ```
-./swo_parser.py
+./swo_parser.py 80000000
 ```
+
+`80000000` is the clock frequency of CPU on chip, which is used to calculate 
+the baudrate on SWO pin.
 
 By default, messages will be parsed from channels 0, 1, and 2. Messages from
 channels 1 and 2 will be prepended with "WARNING: " and "ERROR: " respectively.

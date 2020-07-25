@@ -149,6 +149,9 @@ def raw_termios():
 CPU_CLK = 80000000
 HOST = 'localhost'
 PORT = 6666
+if len(sys.argv) > 1:
+    CPU_CLK = int(sys.argv[1])
+    assert CPU_CLK > 0
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     tcl_socket.connect((HOST, PORT))
     # tcl_socket.settimeout(0)
