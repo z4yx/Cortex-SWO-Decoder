@@ -1,7 +1,7 @@
-# SWO Parser
+# Cortex-SWO-Decoder
 This python script is used to parse ITM trace packets from the SWO pin on the
-STM32 using OpenOCD. It is written for python 3, but shouldn't be too hard to
-port to python 2 if you're one of those people. It communicates with OpenOCD
+STM32 using OpenOCD. It is written for Python 3, but shouldn't be too hard to
+port to Python 2 if you're one of those people. It communicates with OpenOCD
 through the Tcl server (at localhost:6666).
 
 ```
