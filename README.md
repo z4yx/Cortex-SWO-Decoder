@@ -4,6 +4,27 @@ STM32 using OpenOCD. It is written for python 3, but shouldn't be too hard to
 port to python 2 if you're one of those people. It communicates with OpenOCD
 through the Tcl server (at localhost:6666).
 
+```
++-------+    +-----------+
+|       |SWO |           |
+|  MCU  +----+  ST-LINK  |
+|       |    |           |
++-------+    +-----+-----+
+                   |
+                   |USB
+                   |
+             +-----+-----+
+             |  OpenOCD  |
+             +-----+-----+
+                   |
+                   |TCP:6666
+                   |
+             +-----+-----+
+             |  Python   |
+             |  Script   |
+             +-----------+
+```
+
 ## Running the OpenOCD
 To use this script, first you must add some flags when you start up OpenOCD
 (or add these to your startup cfg file for OpenOCD).
