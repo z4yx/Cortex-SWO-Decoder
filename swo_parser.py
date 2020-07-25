@@ -163,7 +163,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     # Enable the tcl_trace output
     tcl_socket.sendall(b'init\n\x1a')
     tcl_socket.sendall(b'tpiu config internal - uart off 80000000\n\x1a')
-    tcl_socket.sendall(b'itm port 0 on\n\x1a')
+    tcl_socket.sendall(b'itm ports on\n\x1a')
     tcl_socket.sendall(b'tcl_trace on\n\x1a')
 
     print("Ctrl-F: (re-)program the flash")

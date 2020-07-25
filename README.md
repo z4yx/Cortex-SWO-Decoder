@@ -9,13 +9,10 @@ To use this script, first you must add some flags when you start up OpenOCD
 (or add these to your startup cfg file for OpenOCD).
 
 ```
-openocd.exe
--f board/st_nucleo_f7.cfg
--c "tpiu config internal - uart off 96000000"
--c "itm ports on"
+openocd -f board/st_nucleo_f7.cfg
 ```
 
-The first line is because I'm using a nucleo_f7 demo board, substitute your
+The "board/st_nucleo_f7.cfg" represents Nucleo-F7 demo board, substitute your
 own cfg here. The line option tells OpenOCD to enable ITM tracing on the
 target, tells it to send the data out on the Tcl server, and tells OpenOCD the
 clock rate of the target. It's important that you replace the 96000000 number
@@ -44,7 +41,7 @@ After starting up OpenOCD, open a terminal in the directory where you placed
 swo_parser.py and type
 
 ```
-python swo_parser.py
+./swo_parser.py
 ```
 
 By default, messages will be parsed from channels 0, 1, and 2. Messages from
@@ -63,3 +60,9 @@ streams.add_stream(Stream(2, 'ERROR: ', tcl_socket))
 The third parameter in the Stream constuctor (tcl_socket) is optional. Leave
 it out if you don't want that message to be echoed to the GDB console.
 
+## Control Keys
+While swo_parser.py is running, press `Ctrl-R` to reset the chip, or `Ctrl-F`
+to program the flash memory. Currently, the binary file to be programmed is 
+named `main.bin`, and located at the directory where openocd was launched.
+
+These control keys are really handy when you are debugging your firmware.
