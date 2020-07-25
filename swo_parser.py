@@ -146,11 +146,14 @@ def raw_termios():
 #### Main program ####
 
 # Set up the socket to the OpenOCD Tcl server
+CPU_CLK = 80000000
 HOST = 'localhost'
 PORT = 6666
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     tcl_socket.connect((HOST, PORT))
     # tcl_socket.settimeout(0)
+    def send_tcl(tcl):
+        tcl_socket.sendall(tcl.encode('ascii') + b'\n\x1a')
     
     # Create a stream manager and add three streams
     streams = StreamManager()
@@ -161,11 +164,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     term_fd, term_old, term_raw = raw_termios()
     
     # Enable the tcl_trace output
-    tcl_socket.sendall(b'init\n\x1a')
-    tcl_socket.sendall(b'tpiu config internal - uart off 80000000\n\x1a')
-    tcl_socket.sendall(b'itm ports on\n\x1a')
-    tcl_socket.sendall(b'tcl_trace on\n\x1a')
+    send_tcl('init')
+    send_tcl('tpiu config internal - uart off ' + str(CPU_CLK))
+    send_tcl('itm ports on')
+    send_tcl('tcl_trace on')
 
+    print("CPU clock:", CPU_CLK/10**6, "MHz")
     print("Ctrl-F: (re-)program the flash")
     print("Ctrl-R: reset the chip")
 
@@ -196,23 +200,23 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
                 key = 64 + ord(sys.stdin.read()[0])
                 if key == ord('F'): # Ctrl-F
                     print("Programming...")
-                    tcl_socket.sendall(b'reset halt\n\x1a')
-                    tcl_socket.sendall(b'flash write_image erase main.bin 0x08000000\n\x1a')
-                    tcl_socket.sendall(b'reset\n\x1a')
+                    send_tcl('reset halt')
+                    send_tcl('flash write_image erase main.bin 0x08000000')
+                    send_tcl('reset')
                 elif key == ord('R'): # Ctrl-R
                     print("Resetting...")
-                    tcl_socket.sendall(b'reset\n\x1a')
+                    send_tcl('reset')
                 elif key == ord('L'): # Ctrl-L
-                    tcl_socket.sendall(b'reset halt\n\x1a')
-                    tcl_socket.sendall(b'stm32l4x lock 0\n\x1a')
-                    tcl_socket.sendall(b'reset\n\x1a')
+                    send_tcl('reset halt')
+                    send_tcl('stm32l4x lock 0')
+                    send_tcl('reset')
                 elif key == ord('U'): # Ctrl-U
-                    tcl_socket.sendall(b'reset halt\n\x1a')
-                    tcl_socket.sendall(b'stm32l4x unlock 0\n\x1a')
-                    tcl_socket.sendall(b'reset\n\x1a')
+                    send_tcl('reset halt')
+                    send_tcl('stm32l4x unlock 0')
+                    send_tcl('reset')
     except KeyboardInterrupt:
         print('Terminating...')
     finally:
         termios.tcsetattr(term_fd, termios.TCSADRAIN, term_old)
         # Turn off the trace data before closing the port
-        tcl_socket.sendall(b'tcl_trace off\n\x1a')
+        send_tcl('tcl_trace off')
