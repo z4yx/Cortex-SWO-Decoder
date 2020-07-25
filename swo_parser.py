@@ -1,9 +1,13 @@
+#!/usr/bin/python3
 #
 #  This program is free software. It comes without any 
 #  warranty, to the extent permitted by applicable law.
 #
 
+import select
 import socket
+import sys
+import termios
 import time
 
 class Stream:
@@ -130,6 +134,14 @@ class StreamManager:
             
             bstring = bstring[payload_size+1:]
    
+def raw_termios():
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    new = termios.tcgetattr(fd)
+    new[3] = new[3] & ~termios.ICANON & ~termios.ECHO & ~termios.IEXTEN #& ~termios.ISIG 
+    new[6][termios.VMIN] = 0
+    new[6][termios.VTIME] = 0
+    return fd, old, new
 
 #### Main program ####
 
@@ -145,29 +157,62 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     streams.add_stream(Stream(0, '', tcl_socket))
     streams.add_stream(Stream(1, 'WARNING: '))
     streams.add_stream(Stream(2, 'ERROR: ', tcl_socket))
+
+    term_fd, term_old, term_raw = raw_termios()
     
     # Enable the tcl_trace output
+    tcl_socket.sendall(b'init\n\x1a')
+    tcl_socket.sendall(b'tpiu config internal - uart off 80000000\n\x1a')
+    tcl_socket.sendall(b'itm port 0 on\n\x1a')
     tcl_socket.sendall(b'tcl_trace on\n\x1a')
 
+    print("Ctrl-F: (re-)program the flash")
+    print("Ctrl-R: reset the chip")
+
     try:
+        termios.tcsetattr(term_fd, termios.TCSADRAIN, term_raw)
         tcl_buf = b''
         while True:
             # Wait for new data from the socket
-            data = tcl_socket.recv(1024)
-            tcl_buf = tcl_buf + data
+            ready = select.select([tcl_socket, sys.stdin], [], [])[0]
+            if tcl_socket in ready:
+                data = tcl_socket.recv(1024)
+                if len(data) == 0:
+                    print("Connection Closed")
+                    break
+                tcl_buf = tcl_buf + data
 
-            # Tcl messages are terminated with a 0x1A byte
-            temp = tcl_buf.split(b'\x1a',1)
-            while len(temp) == 2:
-                # Parse the Tcl message
-                streams.parse_tcl(temp[0])
-                
-                # Remove that message from tcl_buf and grab another message from
-                # the buffer if the is one
-                tcl_buf = temp[1]
+                # Tcl messages are terminated with a 0x1A byte
                 temp = tcl_buf.split(b'\x1a',1)
+                while len(temp) == 2:
+                    # Parse the Tcl message
+                    streams.parse_tcl(temp[0])
+                    
+                    # Remove that message from tcl_buf and grab another message from
+                    # the buffer if the is one
+                    tcl_buf = temp[1]
+                    temp = tcl_buf.split(b'\x1a',1)
+            if sys.stdin in ready:
+                key = 64 + ord(sys.stdin.read()[0])
+                if key == ord('F'): # Ctrl-F
+                    print("Programming...")
+                    tcl_socket.sendall(b'reset halt\n\x1a')
+                    tcl_socket.sendall(b'flash write_image erase main.bin 0x08000000\n\x1a')
+                    tcl_socket.sendall(b'reset\n\x1a')
+                elif key == ord('R'): # Ctrl-R
+                    print("Resetting...")
+                    tcl_socket.sendall(b'reset\n\x1a')
+                elif key == ord('L'): # Ctrl-L
+                    tcl_socket.sendall(b'reset halt\n\x1a')
+                    tcl_socket.sendall(b'stm32l4x lock 0\n\x1a')
+                    tcl_socket.sendall(b'reset\n\x1a')
+                elif key == ord('U'): # Ctrl-U
+                    tcl_socket.sendall(b'reset halt\n\x1a')
+                    tcl_socket.sendall(b'stm32l4x unlock 0\n\x1a')
+                    tcl_socket.sendall(b'reset\n\x1a')
     except KeyboardInterrupt:
         print('Terminating...')
     finally:
+        termios.tcsetattr(term_fd, termios.TCSADRAIN, term_old)
         # Turn off the trace data before closing the port
         tcl_socket.sendall(b'tcl_trace off\n\x1a')
