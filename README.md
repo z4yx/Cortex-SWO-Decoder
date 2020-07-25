@@ -4,7 +4,7 @@ STM32 using OpenOCD. It is written for python 3, but shouldn't be too hard to
 port to python 2 if you're one of those people. It communicates with OpenOCD
 through the Tcl server (at localhost:6666).
 
-## OpenOCD Settings
+## Running the OpenOCD
 To use this script, first you must add some flags when you start up OpenOCD
 (or add these to your startup cfg file for OpenOCD).
 
@@ -13,17 +13,11 @@ openocd -f board/st_nucleo_f7.cfg
 ```
 
 The "board/st_nucleo_f7.cfg" represents Nucleo-F7 demo board, substitute your
-own cfg here. The line option tells OpenOCD to enable ITM tracing on the
-target, tells it to send the data out on the Tcl server, and tells OpenOCD the
-clock rate of the target. It's important that you replace the 96000000 number
-with the actual clock rate for your target. The last line activates all 32 of
-the ITM trace channels; it's optional if you just want to use channel 0 (which
-is the channel used by ITM_SendChar).
+own cfg here.
 
-## STM32 Settings
-You shouldn't need to configure anything on the target. This fact took me
-**forever** to figure out. When the debugger starts, it automatically sets the
-proper registers to the right values. One nice side effect of this is that, if
+## Firmware Notes
+You don't have to configure anything on the MCU. When the debugger starts, 
+it automatically sets registers proper values. One nice side effect of this is that, if
 the debugger is not attached to the target, your code will skip over sending
 the trace messages. This is really nice since ITM_SendChar is blocking (i.e.,
 the code stops until every byte is sent out on the SWO pin).
